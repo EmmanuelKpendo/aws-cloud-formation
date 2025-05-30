@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 
 Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and Event bridge rules.
 
@@ -24,11 +24,11 @@ Resources:
 
   # EC2 Read-only Group
   EC2ReadOnlyGroup:
-      Type: AWS::IAM::Group
-      Properties:
-      GroupName: EC2ReadOnlyGroup
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+    Type: AWS::IAM::Group
+    Properties:
+    GroupName: EC2ReadOnlyGroup
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
 
   # IAM user: S3-User
   S3User:
@@ -42,12 +42,30 @@ Resources:
         PasswordResetRequired: true
 
   # IAM user:  EC2-User
-    EC2User:
-        Type: AWS::IAM::User
-        Properties:
-        UserName: ec2-user
-        Groups:
-            - !Ref EC2ReadOnlyGroup
-        LoginProfile:
-          Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
-          PasswordResetRequired: true
+  EC2User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: ec2-user
+      Groups:
+        - !Ref EC2ReadOnlyGroup
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
+        PasswordResetRequired: true
+
+  # Parameter Store for S3-User email
+  S3UserEmailParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /iam/users/s3-user/email
+      Type: String
+      Value: s3-user@example.com
+      Description: Email for s3-user
+
+  # Parameter Store for EC2-User email
+  EC2UserEmailParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /iam/users/ec2-user/email
+      Type: String
+      Value: ec2-user@example.com
+      Description: Email for ec2-user
