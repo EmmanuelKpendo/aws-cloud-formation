@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and Event bridge rules.
+
+Resources:
+  #Secret Manager for One-time password
+  OneTimePasswordSecret:
+        Type: AWS::SecretsManager::Secret
+        Properties:
+          Description: One-time password for IAM users
+          GenerateSecretString:
+            SecretStringTemplate: '{}'
+            GenerateStringKey: otp
+            PasswordLength: 16
+            ExcludeCharacters: '"\'\\/@'
+
+  # S3 Read-only Group
+  S3ReadOnlyGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: S3ReadOnlyGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  # EC2 Read-only Group
+  EC2ReadOnlyGroup:
+      Type: AWS::IAM::Group
+      Properties:
+      GroupName: EC2ReadOnlyGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
