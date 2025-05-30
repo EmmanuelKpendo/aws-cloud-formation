@@ -129,6 +129,7 @@ Resources:
   UserCreationRule:
     Type: AWS::Events::Rule
     Properties:
+      Name: UserCreationEventRule
       Description: Detects IAM user creation and triggers the Lambda
       EventPattern:
         source:
@@ -136,10 +137,10 @@ Resources:
         detail-type:
           - "AWS API Call via CloudTrail"
         detail:
-        eventSource:
-          - "iam.amazonaws.com"
-        eventName:
-          - "CreateUser"
+          eventSource:
+            - "iam.amazonaws.com"
+          eventName:
+            - "CreateUser"
       Targets:
         - Arn: !GetAtt UserCreationLambda.Arn
           Id: "UserCreationLambdaTarget"
