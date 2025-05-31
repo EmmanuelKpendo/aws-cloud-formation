@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and Event bridge rules.
+
+Parameters:
+  LambdaCodeS3Bucket:
+    Type: String
+    Description: S3 bucket containing the Go Lambda function ZIP file
+  LambdaCodeS3Key:
+    Type: String
+    Description: S3 key for the Go Lambda function ZIP file
+    Default: user-creation-lambda.zip
+
+
+Resources:
+  #Secret Manager for One-time password
+  OneTimePasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: One-time password for IAM users
+      GenerateSecretString:
+        SecretStringTemplate: '{}'
+        GenerateStringKey: otp
+        PasswordLength: 16
+        ExcludeCharacters: '"\'\\/@'
+
+  # S3 Read-only Group
+  S3ReadOnlyGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: S3ReadOnlyGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  # EC2 Read-only Group
+  EC2ReadOnlyGroup:
+    Type: AWS::IAM::Group
+    Properties:
+    GroupName: EC2ReadOnlyGroup
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+
+  # IAM user: S3-User
+  S3User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: s3-user
+      Groups:
+        - !Ref S3ReadOnlyGroup
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
+        PasswordResetRequired: true
+
+  # IAM user:  EC2-User
+  EC2User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: ec2-user
+      Groups:
+        - !Ref EC2ReadOnlyGroup
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
+        PasswordResetRequired: true
+
+  # Parameter Store for S3-User email
+  S3UserEmailParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /iam/users/s3-user/email
+      Type: String
+      Value: s3-user@example.com
+      Description: Email for s3-user
+
+  # Parameter Store for EC2-User email
+  EC2UserEmailParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /iam/users/ec2-user/email
+      Type: String
+      Value: ec2-user@example.com
+      Description: Email for ec2-user
+
+  # Lambda execution role
+    LambdaExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: UserCreationLambdaRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: UserCreationPolicy
+            PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/iam/users/*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref
+
+  # Lambda Function
+  UserCreationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: UserCreationFunction
+      Handler: main
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: provided.al2023
+      Timeout: 30
+      Code:
+        S3Bucket: !Ref LambdaCodeS3Bucket
+        S3Key: !Ref LambdaCodeS3Key
+
+  # EventBridge Rule
+  UserCreationRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: UserCreationEventRule
+      Description: Detects IAM user creation and triggers the Lambda
+      EventPattern:
+        source:
+          - "aws.iam"
+        detail-type:
+          - "AWS API Call via CloudTrail"
+        detail:
+          eventSource:
+            - "iam.amazonaws.com"
+          eventName:
+            - "CreateUser"
+      Targets:
+        - Arn: !GetAtt UserCreationLambda.Arn
+          Id: "UserCreationLambdaTarget"
+
+  # Lambda Permission for EventBridge
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UserCreationLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt UserCreationRule.Arn
+
+    # Outputs
+    OneTimePasswordSecretArn:
+      Description: ARN of the Secret Manager One-time password secret
+      Value: !Ref OneTimePasswordSecret
+    S3UserGroupName:
+      Description: Name of the S3 Read-only IAM group
+      Value: !Ref S3ReadOnlyGroup
+    EC2UserGroupName:
+      Description: Name of the EC2 Read-only IAM group
+      Value: !Ref EC2ReadOnlyGroup
+    LambdaFunctionArn:
+      Description: Arn of the Lambda function for user creation
+      Value: !GetAtt UserCreationLambda.Arn
