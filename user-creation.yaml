@@ -42,6 +42,7 @@ Resources:
   # IAM user: S3-User
   S3User:
     Type: AWS::IAM::User
+    DependsOn: UserCreationRule
     Properties:
       UserName: s3-user
       Groups:
@@ -53,6 +54,7 @@ Resources:
   # IAM user: EC2-User
   EC2User:
     Type: AWS::IAM::User
+    DependsOn: UserCreationRule
     Properties:
       UserName: ec2-user
       Groups:
