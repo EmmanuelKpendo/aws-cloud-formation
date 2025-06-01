@@ -64,7 +64,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	var password string
 	if err != nil {
 		log.Printf("failed to get secret: %v", err)
-		password = "Failed to retrieve password!"
+		password = "Failed to retrieve password"
 	} else {
 		var secretData SecretData
 		if err := json.Unmarshal([]byte(*secretsOutput.SecretString), &secretData); err != nil {
