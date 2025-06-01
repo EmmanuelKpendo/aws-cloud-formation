@@ -3,6 +3,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and Event bridge rules.
 
 Parameters:
+  # S3 Bucket params
   LambdaCodeS3Bucket:
     Type: String
     Description: S3 bucket containing the Go Lambda function ZIP file
@@ -12,6 +13,12 @@ Parameters:
     Default: user-creation-lambda.zip
 
 Resources:
+  # S3 Bucket Creation
+  CloudFormationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: cloud-formation-artifact
+
   # Secret Manager for One-time password
   OneTimePasswordSecret:
     Type: AWS::SecretsManager::Secret
@@ -93,6 +100,8 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: UserCreationPolicy
           PolicyDocument:
@@ -107,7 +116,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
-                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/iam/users/*'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/iam/users/s3-user/email'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/iam/users/ec2-user/email'
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
