@@ -11,9 +11,8 @@ Parameters:
     Description: S3 key for the Go Lambda function ZIP file
     Default: user-creation-lambda.zip
 
-
 Resources:
-  #Secret Manager for One-time password
+  # Secret Manager for One-time password
   OneTimePasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -22,7 +21,7 @@ Resources:
         SecretStringTemplate: '{}'
         GenerateStringKey: otp
         PasswordLength: 16
-        ExcludeCharacters: '"\'\\/@'
+        ExcludeCharacters: '"''\/@'
 
   # S3 Read-only Group
   S3ReadOnlyGroup:
@@ -36,9 +35,9 @@ Resources:
   EC2ReadOnlyGroup:
     Type: AWS::IAM::Group
     Properties:
-    GroupName: EC2ReadOnlyGroup
-    ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+      GroupName: EC2ReadOnlyGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
 
   # IAM user: S3-User
   S3User:
@@ -81,20 +80,20 @@ Resources:
       Description: Email for ec2-user
 
   # Lambda execution role
-    LambdaExecutionRole:
-      Type: AWS::IAM::Role
-      Properties:
-        RoleName: UserCreationLambdaRole
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: UserCreationPolicy
-            PolicyDocument:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: UserCreationLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: UserCreationPolicy
+          PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
@@ -110,7 +109,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref
+                Resource: !Ref OneTimePasswordSecret
 
   # Go Lambda Function
   UserCreationLambda:
@@ -133,17 +132,17 @@ Resources:
       Description: Detects IAM user creation and triggers the Lambda
       EventPattern:
         source:
-          - "aws.iam"
+          - aws.iam
         detail-type:
-          - "AWS API Call via CloudTrail"
+          - AWS API Call via CloudTrail
         detail:
           eventSource:
-            - "iam.amazonaws.com"
+            - iam.amazonaws.com
           eventName:
-            - "CreateUser"
+            - CreateUser
       Targets:
         - Arn: !GetAtt UserCreationLambda.Arn
-          Id: "UserCreationLambdaTarget"
+          Id: UserCreationLambdaTarget
 
   # Lambda Permission for EventBridge
   LambdaPermission:
@@ -154,7 +153,6 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt UserCreationRule.Arn
 
-  # Outputs
 Outputs:
   OneTimePasswordSecretArn:
     Description: ARN of the Secret Manager One-time password secret
