@@ -49,9 +49,7 @@ Resources:
   # IAM user: S3-User
   S3User:
     Type: AWS::IAM::User
-    DependsOn:
-      - UserCreationLambda
-      - UserCreationRule
+    DependsOn: UserCreationRule
     Properties:
       UserName: s3-user
       Groups:
@@ -63,9 +61,7 @@ Resources:
   # IAM user: EC2-User
   EC2User:
     Type: AWS::IAM::User
-    DependsOn:
-      - UserCreationLambda
-      - UserCreationRule
+    DependsOn: UserCreationRule
     Properties:
       UserName: ec2-user
       Groups:
@@ -99,7 +95,7 @@ Resources:
       FunctionName: !Ref UserCreationLambda
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt UserCreationRule.Arn
+      SourceArn: !GetAtt NewUserEventRule.Arn
 
   # Lambda execution role
   LambdaExecutionRole:
@@ -169,6 +165,8 @@ Resources:
       Targets:
         - Arn: !GetAtt UserCreationLambda.Arn
           Id: UserCreationLambdaTarget
+
+
 
 Outputs:
   OneTimePasswordSecretArn:
