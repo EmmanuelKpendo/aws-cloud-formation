@@ -50,7 +50,7 @@ Resources:
   S3User:
     Type: AWS::IAM::User
     DependsOn:
-      - LogUserInfoLambda
+      - UserCreationLambda
       - UserCreationRule
     Properties:
       UserName: s3-user
@@ -64,7 +64,7 @@ Resources:
   EC2User:
     Type: AWS::IAM::User
     DependsOn:
-      - LogUserInfoLambda
+      - UserCreationLambda
       - UserCreationRule
     Properties:
       UserName: ec2-user
