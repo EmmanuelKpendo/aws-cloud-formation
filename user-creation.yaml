@@ -118,7 +118,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: UserCreationFunction
-      Handler: main
+      Handler: bootstrap
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: provided.al2023
       Timeout: 30
