@@ -170,8 +170,6 @@ Resources:
         - Arn: !GetAtt UserCreationLambda.Arn
           Id: UserCreationLambdaTarget
 
-
-
 Outputs:
   OneTimePasswordSecretArn:
     Description: ARN of the Secret Manager One-time password secret
