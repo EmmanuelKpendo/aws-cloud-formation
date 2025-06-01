@@ -49,7 +49,9 @@ Resources:
   # IAM user: S3-User
   S3User:
     Type: AWS::IAM::User
-    DependsOn: UserCreationRule
+    DependsOn:
+      - LogUserInfoLambda
+      - UserCreationRule
     Properties:
       UserName: s3-user
       Groups:
@@ -61,7 +63,9 @@ Resources:
   # IAM user: EC2-User
   EC2User:
     Type: AWS::IAM::User
-    DependsOn: UserCreationRule
+    DependsOn:
+      - LogUserInfoLambda
+      - UserCreationRule
     Properties:
       UserName: ec2-user
       Groups:
@@ -87,6 +91,15 @@ Resources:
       Type: String
       Value: ec2-user@example.com
       Description: Email for ec2-user
+
+  # Lambda Permission for EventBridge
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UserCreationLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt UserCreationRule.Arn
 
   # Lambda execution role
   LambdaExecutionRole:
@@ -157,14 +170,7 @@ Resources:
         - Arn: !GetAtt UserCreationLambda.Arn
           Id: UserCreationLambdaTarget
 
-  # Lambda Permission for EventBridge
-  LambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref UserCreationLambda
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt UserCreationRule.Arn
+
 
 Outputs:
   OneTimePasswordSecretArn:
