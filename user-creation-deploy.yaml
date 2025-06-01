@@ -1,3 +1,4 @@
 template-file-path: user-creation.yaml
-parameters: {}
+parameters:
+  LambdaCodeS3Bucket: cloud-formation-artifact
 tags: {}
