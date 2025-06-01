@@ -154,16 +154,17 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt UserCreationRule.Arn
 
-    # Outputs
-    OneTimePasswordSecretArn:
-      Description: ARN of the Secret Manager One-time password secret
-      Value: !Ref OneTimePasswordSecret
-    S3UserGroupName:
-      Description: Name of the S3 Read-only IAM group
-      Value: !Ref S3ReadOnlyGroup
-    EC2UserGroupName:
-      Description: Name of the EC2 Read-only IAM group
-      Value: !Ref EC2ReadOnlyGroup
-    LambdaFunctionArn:
-      Description: Arn of the Lambda function for user creation
-      Value: !GetAtt UserCreationLambda.Arn
+  # Outputs
+Outputs:
+  OneTimePasswordSecretArn:
+    Description: ARN of the Secret Manager One-time password secret
+    Value: !Ref OneTimePasswordSecret
+  S3UserGroupName:
+    Description: Name of the S3 Read-only IAM group
+    Value: !Ref S3ReadOnlyGroup
+  EC2UserGroupName:
+    Description: Name of the EC2 Read-only IAM group
+    Value: !Ref EC2ReadOnlyGroup
+  LambdaFunctionArn:
+    Description: Arn of the Lambda function for user creation
+    Value: !GetAtt UserCreationLambda.Arn
