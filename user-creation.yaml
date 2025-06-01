@@ -51,7 +51,7 @@ Resources:
         Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
         PasswordResetRequired: true
 
-  # IAM user:  EC2-User
+  # IAM user: EC2-User
   EC2User:
     Type: AWS::IAM::User
     Properties:
@@ -112,7 +112,7 @@ Resources:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref
 
-  # Lambda Function
+  # Go Lambda Function
   UserCreationLambda:
     Type: AWS::Lambda::Function
     Properties:
