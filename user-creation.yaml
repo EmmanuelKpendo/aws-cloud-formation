@@ -144,7 +144,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref OneTimePasswordSecret
+                Resource: !GetAtt OneTimePasswordSecret.Arn
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
