@@ -105,7 +105,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !GetAtt OneTimePasswordSecret.Arn
+                Resource: !Ref OneTimePasswordSecret
 
   # Lambda Function
   UserCreationLambda:
