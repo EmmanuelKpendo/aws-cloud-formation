@@ -132,12 +132,35 @@ Resources:
     Properties:
       FunctionName: UserCreationFunction
       Description: Logs new user email and temporary password
-      Handler: bootstrap
+      Handler: index.handler
+      Runtime: python3.8
       Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: provided.al2023
       Code:
-        S3Bucket: !Ref LambdaCodeS3Bucket
-        S3Key: !Ref LambdaCodeS3Key
+        ZipFile: |
+          import boto3
+
+          def handler(event, context):
+              username = event['detail']['requestParameters']['userName']
+              ssm = boto3.client('ssm')
+              secrets = boto3.client('secretsmanager')
+
+              email_param = ssm.get_parameter(
+                  Name=f'/cf-users/{username}/email',
+                  WithDecryption=False
+              )
+              email = email_param['Parameter']['Value']
+
+              secret = secrets.get_secret_value(SecretId='OneTimePassword')
+              otp = secret['SecretString']
+
+              print(f"[New User Created] Username: {username}")
+              print(f"Email: {email}")
+              print(f"Temporary Password: {otp}")
+
+              return {
+                  'statusCode': 200,
+                  'body': f"User {username} processed successfully."
+              }
 
   EventBridgeLambdaPermission:
     Type: AWS::Lambda::Permission

@@ -33,6 +33,8 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		return "", err
 	}
 
+	fmt.Println(event.Detail, "eventDetail")
+
 	// Parse the CloudTrail event
 	var ctEvent CloudTrailEvent
 	if err := json.Unmarshal(event.Detail, &ctEvent); err != nil {
