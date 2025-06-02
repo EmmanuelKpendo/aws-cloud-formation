@@ -92,7 +92,7 @@ Resources:
   Ec2UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /cf-users/ec2User/email
+      Name: cf-users/ec2User/email
       Type: String
       Value: !Ref Ec2UserEmail
       Description: Registered email for ec2User
@@ -100,7 +100,7 @@ Resources:
   s3UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /cf-users/s3User/email
+      Name: cf-users/s3User/email
       Type: String
       Value: !Ref s3UserEmail
       Description: Registered email for s3User

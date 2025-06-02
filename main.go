@@ -26,61 +26,62 @@ type SecretData struct {
 }
 
 func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) {
-	//Initialize AWS SDK config
+	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		log.Printf("failed to load AWS config: %v", err)
-		return "Failed to load AWS config", err
+		log.Printf("Failed to load AWS config: %v", err)
+		return "", err
 	}
 
-	//Parse cloudTrail Event
-	var cloudTrailEvent CloudTrailEvent
-	if err := json.Unmarshal(event.Detail, &cloudTrailEvent); err != nil {
-		log.Printf("failed to unmarshal CloudTrailEvent: %v", err)
-		return "Failed to unmarshal CloudTrailEvent", err
+	// Parse the CloudTrail event
+	var ctEvent CloudTrailEvent
+	if err := json.Unmarshal(event.Detail, &ctEvent); err != nil {
+		log.Printf("Failed to unmarshal CloudTrail event: %v", err)
+		return "", err
 	}
-	userName := cloudTrailEvent.Detail.RequestParameters.UserName
-	fmt.Printf("userName: %s", userName)
 
-	//Initialize SSM Client
+	userName := ctEvent.Detail.RequestParameters.UserName
+	if userName == "" {
+		err := fmt.Errorf("empty userName in event")
+		log.Printf("Error: %v", err)
+		return "", err
+	}
+	log.Printf("Processing user: %s", userName)
+
+	// Initialize SSM and Secrets Manager clients
 	ssmClient := ssm.NewFromConfig(cfg)
-	emailParam := fmt.Sprintf("cf-users/%s/email", userName)
-	fmt.Printf("emailParam: %s", emailParam)
-
-	//Get Email from Parameter Store
-	emailOutput, err := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
-		Name: &emailParam,
-	})
-	var email string
-	if err != nil {
-		log.Printf("failed to get email parameter for %s: %v", userName, err)
-	} else {
-		email = *emailOutput.Parameter.Value
-	}
-	fmt.Printf("email: %s\n", email)
-
-	//Initialize secret manager client
 	secretsClient := secretsmanager.NewFromConfig(cfg)
-	secretsOutput, err := secretsClient.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
+
+	// Fetch user email from SSM
+	emailParam := fmt.Sprintf("/cf-users/%s/email", userName)
+	emailOutput, err := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
+		Name: aws.String(emailParam),
+	})
+	if err != nil {
+		log.Printf("Failed to get email parameter for %s: %v", userName, err)
+		return "", err
+	}
+	email := aws.ToString(emailOutput.Parameter.Value)
+
+	// Fetch one-time password from Secrets Manager
+	secretOutput, err := secretsClient.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 		SecretId: aws.String("OneTimePassword"),
 	})
-	var password string
 	if err != nil {
-		log.Printf("failed to get secret: %v", err)
-		password = "Failed to retrieve password"
-	} else {
-		var secretData SecretData
-		if err := json.Unmarshal([]byte(*secretsOutput.SecretString), &secretData); err != nil {
-			log.Printf("failed to unmarshal secret: %v", err)
-			password = "Failed to parse password"
-		} else {
-			password = secretData.Password
-		}
+		log.Printf("Failed to get secret: %v", err)
+		return "", err
 	}
 
-	//log the details
+	var secret SecretData
+	if err := json.Unmarshal([]byte(aws.ToString(secretOutput.SecretString)), &secret); err != nil {
+		log.Printf("Failed to unmarshal secret string: %v", err)
+		return "", err
+	}
+	password := secret.Password
+
+	// Final logging
 	log.Printf("New user created: %s, Email: %s, Temporary password: %s", userName, email, password)
-	return "Logged user creation success", nil
+	return "User creation logged successfully", nil
 }
 
 func main() {
