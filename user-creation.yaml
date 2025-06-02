@@ -145,7 +145,7 @@ Resources:
               secrets = boto3.client('secretsmanager')
 
               email_param = ssm.get_parameter(
-                  Name=f'/provisioned-users/{username}/email',
+                  Name=f'/cf-users/{username}/email',
                   WithDecryption=False
               )
               email = email_param['Parameter']['Value']
