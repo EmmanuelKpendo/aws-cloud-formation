@@ -78,7 +78,7 @@ Resources:
   EC2UserAccount:
     Type: AWS::IAM::User
     DependsOn:
-      - LogUserInfoLambda
+      - UserCreationLambda
       - NewUserEventRule
     Properties:
       Groups:
@@ -90,7 +90,7 @@ Resources:
   S3UserAccount:
     Type: AWS::IAM::User
     DependsOn:
-      - LogUserInfoLambda
+      - UserCreationLambda
       - NewUserEventRule
     Properties:
       Groups:
@@ -116,14 +116,14 @@ Resources:
           eventSource:
             - "iam.amazonaws.com"
       Targets:
-        - Arn: !GetAtt LogUserInfoLambda.Arn
+        - Arn: !GetAtt UserCreationLambda.Arn
           Id: LambdaTarget
 
   # Lambda Permission for EventBridge
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref LogUserInfoLambda
+      FunctionName: !Ref UserCreationLambda
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt NewUserEventRule.Arn
@@ -157,12 +157,12 @@ Resources:
                 Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cf-user-*'
 
   # Lambda Function
-  LogUserInfoLambda:
+  UserCreationLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: log-user-info
       Description: Logs new user email and temporary password
-      Handler: main
+      Handler: bootstrap
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: provided.al2023
       Timeout: 30
@@ -182,7 +182,7 @@ Outputs:
     Value: !Ref S3UserGroup
   LambdaFunctionArn:
     Description: ARN of the Lambda function
-    Value: !GetAtt LogUserInfoLambda.Arn
+    Value: !GetAtt UserCreationLambda.Arn
 
 Metadata:
   AWS::Composer::Groups:
