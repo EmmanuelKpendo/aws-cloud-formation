@@ -80,7 +80,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	//log the details
 	log.Printf("New user created: %s, Email: %s, Temporary password: %s", userName, email, password)
-	return "Logged user creation", nil
+	return "Logged user creation success", nil
 }
 
 func main() {
