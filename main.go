@@ -33,28 +33,33 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		return "", err
 	}
 
-	fmt.Println(event.Detail, "eventDetail")
+	log.Printf("Full Event: %+v", event)
+	log.Printf("Detail (string): %s", string(event.Detail))
+
+	// Print raw event detail for debugging
+	log.Printf("Raw event detail: %s", string(event.Detail))
 
 	// Parse the CloudTrail event
 	var ctEvent CloudTrailEvent
 	if err := json.Unmarshal(event.Detail, &ctEvent); err != nil {
-		log.Printf("Failed to unmarshal CloudTrail event: %v", err)
+		log.Printf("Failed to unmarshal CloudTrail event detail: %v", err)
 		return "", err
 	}
 
 	userName := ctEvent.Detail.RequestParameters.UserName
 	if userName == "" {
+		log.Printf("Parsed event: %+v", ctEvent) // Add this line to inspect struct
 		err := fmt.Errorf("empty userName in event")
 		log.Printf("Error: %v", err)
 		return "", err
 	}
 	log.Printf("Processing user: %s", userName)
 
-	// Initialize SSM and Secrets Manager clients
+	// Initialize clients
 	ssmClient := ssm.NewFromConfig(cfg)
 	secretsClient := secretsmanager.NewFromConfig(cfg)
 
-	// Fetch user email from SSM
+	// Fetch email from SSM
 	emailParam := fmt.Sprintf("/cf-users/%s/email", userName)
 	emailOutput, err := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
 		Name: aws.String(emailParam),
@@ -65,7 +70,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	}
 	email := aws.ToString(emailOutput.Parameter.Value)
 
-	// Fetch one-time password from Secrets Manager
+	// Fetch password from Secrets Manager
 	secretOutput, err := secretsClient.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
 		SecretId: aws.String("OneTimePassword"),
 	})
@@ -81,7 +86,6 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	}
 	password := secret.Password
 
-	// Final logging
 	log.Printf("New user created: %s, Email: %s, Temporary password: %s", userName, email, password)
 	return "User creation logged successfully", nil
 }
