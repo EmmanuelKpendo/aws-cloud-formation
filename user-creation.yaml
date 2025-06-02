@@ -166,7 +166,7 @@ Resources:
 
 Outputs:
   OneTimePasswordSecretArn:
-    Description: ARN of the Secrets Manager secret for the One-Time password
+    Description: ARN of the Secrets Manager secret for the otp
     Value: !Ref OneTimePasswordSecret
   EC2UserGroupName:
     Description: Name of the EC2 read-only group
