@@ -1,29 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and Event bridge rules.
+Description: CloudFormation template for creating Secrets Manager, IAM groups and users, Parameter Store, and EventBridge rules.
 
 Parameters:
-  # S3 Bucket
   LambdaCodeS3Bucket:
     Type: String
     Description: S3 bucket containing the Go Lambda function ZIP file
     Default: cloud-formation-artifact
+
   LambdaCodeS3Key:
     Type: String
     Description: S3 key for the Go Lambda function ZIP file
     Default: user-creation-lambda.zip
 
-  # Username & Email
   Ec2UserEmail:
     Type: String
     Description: Email address for the ec-user
     Default: ec2-user@example.com
+
   s3UserEmail:
     Type: String
     Description: Email address for the s3-user
     Default: s3-user@example.com
 
 Resources:
-  # Secrets Manager: One-Time Password
   OneTimePasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -33,11 +32,9 @@ Resources:
         SecretStringTemplate: '{}'
         GenerateStringKey: "password"
         PasswordLength: 16
-        ExcludeCharacters: '"@/\'
+        ExcludeCharacters: '"@/\\'
         RequireEachIncludedType: true
 
-
-  # User Groups
   S3UserGroup:
     Type: AWS::IAM::Group
     Properties:
@@ -88,7 +85,6 @@ Resources:
         Password: !Sub "{{resolve:secretsmanager:${OneTimePasswordSecret}::password}}"
         PasswordResetRequired: true
 
-  # SSM:Parameters
   Ec2UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
@@ -105,7 +101,6 @@ Resources:
       Value: !Ref s3UserEmail
       Description: Registered email for s3User
 
-  # IAM Role for Lambda with read access to Parameters and Secrets
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -132,28 +127,14 @@ Resources:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref OneTimePasswordSecret
 
-
-  # Lambda Function
-  #   UserCreationLambda:
-  #    Type: AWS::Lambda::Function
-  #    Properties:
-  #      FunctionName: UserCreationFunction
-  #      Description: Logs new user email and temporary password
-  #      Handler: bootstrap
-  #      Role: !GetAtt LambdaExecutionRole.Arn
-  #      Runtime: provided.al2023
-  #      Code:
-  #        S3Bucket: !Ref LambdaCodeS3Bucket
-  #        S3Key: !Ref LambdaCodeS3Key
-
-      UserCreationLambda:
-      Type: AWS::Lambda::Function
-      Properties:
-        FunctionName: UserCreationFunction
-        Description: Logs new user email and temporary password
+  UserCreationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: UserCreationFunction
+      Description: Logs new user email and temporary password
       Handler: index.handler
       Runtime: python3.8
-      Role: !GetAtt LambdaHandlerRole.Arn
+      Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         ZipFile: |
           import boto3
@@ -181,8 +162,6 @@ Resources:
                   'body': f"User {username} processed successfully."
               }
 
-
-  # Allow EventBridge to invoke Lambda
   EventBridgeLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -191,7 +170,6 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt IAMUserEventRule.Arn
 
-  # EventBridge rule to catch CreateUser API calls
   IAMUserEventRule:
     Type: AWS::Events::Rule
     Properties:
@@ -214,12 +192,15 @@ Outputs:
   OneTimePasswordSecretArn:
     Description: ARN of the Secrets Manager secret for the one-time-password
     Value: !Ref OneTimePasswordSecret
+
   EC2UserGroupName:
     Description: Name of the EC2 read-only group
     Value: !Ref EC2UserGroup
+
   S3UserGroupName:
     Description: Name of the S3 read-only group
     Value: !Ref S3UserGroup
+
   LambdaFunctionArn:
     Description: ARN of the Lambda function
     Value: !GetAtt UserCreationLambda.Arn
