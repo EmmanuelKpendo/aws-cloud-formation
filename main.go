@@ -44,7 +44,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	//Initialize SSM Client
 	ssmClient := ssm.NewFromConfig(cfg)
-	emailParam := fmt.Sprintf("cf-user-%s", userName)
+	emailParam := fmt.Sprintf("cf-users/%s/email", userName)
 	fmt.Printf("emailParam: %s", emailParam)
 
 	//Get Email from Parameter Store
@@ -57,11 +57,12 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	} else {
 		email = *emailOutput.Parameter.Value
 	}
+	fmt.Printf("email: %s\n", email)
 
 	//Initialize secret manager client
 	secretsClient := secretsmanager.NewFromConfig(cfg)
 	secretsOutput, err := secretsClient.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String("OneTimePasswordSecret"),
+		SecretId: aws.String("OneTimePassword"),
 	})
 	var password string
 	if err != nil {

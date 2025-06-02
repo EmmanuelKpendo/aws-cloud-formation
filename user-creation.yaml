@@ -58,13 +58,14 @@ Resources:
   EC2UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub 'cf-user-${EC2UserName}'
+      Name: cf-users/ec2-user/email
       Type: String
       Value: !Ref EC2UserEmail
+      
   S3UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub 'cf-user-${S3UserName}'
+      Name: cf-users/s3-user/email
       Type: String
       Value: !Ref S3UserEmail
 
@@ -132,12 +133,11 @@ Resources:
           - Effect: Allow
             Action: sts:AssumeRole
             Principal:
-              Service:
-                - lambda.amazonaws.com
+              Service: lambda.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: access-secrets-ssm
+        - PolicyName: LambdaAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -148,7 +148,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
-                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cf-user-*'
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cf-users/*'
 
   # Lambda Function
   UserCreationLambda:
@@ -159,7 +159,6 @@ Resources:
       Handler: bootstrap
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: provided.al2023
-      Timeout: 30
       Code:
         S3Bucket: !Ref LambdaCodeS3Bucket
         S3Key: !Ref LambdaCodeS3Key
