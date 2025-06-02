@@ -78,7 +78,7 @@ Resources:
         Password: !Sub "{{resolve:secretsmanager:${OneTimePasswordSecret}::password}}"
         PasswordResetRequired: true
 
-  S32User:
+  S3User:
     Type: AWS::IAM::User
     Properties:
       UserName: s3User
