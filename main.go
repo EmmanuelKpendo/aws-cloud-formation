@@ -40,7 +40,6 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		return "Failed to unmarshal CloudTrailEvent", err
 	}
 	userName := cloudTrailEvent.Detail.RequestParameters.UserName
-	fmt.Printf("userName: %s", userName)
 
 	//Initialize SSM Client
 	ssmClient := ssm.NewFromConfig(cfg)
