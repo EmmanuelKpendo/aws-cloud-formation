@@ -93,12 +93,6 @@ Resources:
       Value: ec2-user@example.com
       Description: Email for ec2-user
 
-
-
-
-
-
-
   # EventBridge Rule
   UserCreationRule:
     Type: AWS::Events::Rule
