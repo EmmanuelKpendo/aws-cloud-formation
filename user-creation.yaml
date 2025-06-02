@@ -50,7 +50,9 @@ Resources:
   # IAM user: S3-User
   S3User:
     Type: AWS::IAM::User
-    DependsOn: UserCreationRule
+    DependsOn:
+      - UserCreationLambda
+      - UserCreationRule
     Properties:
       UserName: s3-user
       Groups:
@@ -62,7 +64,9 @@ Resources:
   # IAM user: EC2-User
   EC2User:
     Type: AWS::IAM::User
-    DependsOn: UserCreationRule
+    DependsOn:
+      - UserCreationLambda
+      - UserCreationRule
     Properties:
       UserName: ec2-user
       Groups:
@@ -88,6 +92,32 @@ Resources:
       Type: String
       Value: ec2-user@example.com
       Description: Email for ec2-user
+
+
+
+
+
+
+
+  # EventBridge Rule
+  UserCreationRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: UserCreationEventRule
+      Description: Detects IAM user creation and triggers the Lambda
+      EventPattern:
+        source:
+          - "aws.iam"
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventName:
+            - CreateUser
+          eventSource:
+            - "iam.amazonaws.com"
+      Targets:
+        - Arn: !GetAtt UserCreationLambda.Arn
+          Id: UserCreationLambdaTarget
 
   # Lambda Permission for EventBridge
   LambdaPermission:
@@ -118,19 +148,13 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: '*'
+              - Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref OneTimePasswordSecret
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
                 Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lab-2-user-email-*'
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Ref OneTimePasswordSecret
 
   # Go Lambda Function
   UserCreationLambda:
@@ -144,26 +168,6 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaCodeS3Bucket
         S3Key: !Ref LambdaCodeS3Key
-
-  # EventBridge Rule
-  UserCreationRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: UserCreationEventRule
-      Description: Detects IAM user creation and triggers the Lambda
-      EventPattern:
-        source:
-          - aws.iam
-        detail-type:
-          - AWS API Call via CloudTrail
-        detail:
-          eventSource:
-            - iam.amazonaws.com
-          eventName:
-            - CreateUser
-      Targets:
-        - Arn: !GetAtt UserCreationLambda.Arn
-          Id: UserCreationLambdaTarget
 
 Outputs:
   OneTimePasswordSecretArn:
