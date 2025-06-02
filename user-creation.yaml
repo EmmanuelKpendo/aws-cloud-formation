@@ -6,6 +6,7 @@ Parameters:
   LambdaCodeS3Bucket:
     Type: String
     Description: S3 bucket containing the Go Lambda function ZIP file
+    Default: cloud-formation-artifact
   LambdaCodeS3Key:
     Type: String
     Description: S3 key for the Go Lambda function ZIP file
