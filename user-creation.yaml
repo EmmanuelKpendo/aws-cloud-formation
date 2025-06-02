@@ -18,6 +18,7 @@ Resources:
   OneTimePasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
+      Name: OneTimePasswordSecret
       Description: One-time password for IAM users
       GenerateSecretString:
         SecretStringTemplate: '{}'
@@ -49,7 +50,7 @@ Resources:
       Groups:
         - !Ref S3ReadOnlyGroup
       LoginProfile:
-        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
+        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:otp}}'
         PasswordResetRequired: true
 
   # IAM user: EC2-User
@@ -60,14 +61,14 @@ Resources:
       Groups:
         - !Ref EC2ReadOnlyGroup
       LoginProfile:
-        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:SecretString:otp}}'
+        Password: !Sub '{{resolve:secretsmanager:${OneTimePasswordSecret}:otp}}'
         PasswordResetRequired: true
 
   # Parameter Store for S3-User email
   S3UserEmailParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /iam/users/s3-user/email
+      Name: cf-user-s3-user
       Type: String
       Value: s3-user@example.com
       Description: Email for s3-user
@@ -76,7 +77,7 @@ Resources:
   EC2UserEmailParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /iam/users/ec2-user/email
+      Name: cf-user-ec2-user
       Type: String
       Value: ec2-user@example.com
       Description: Email for ec2-user
@@ -121,9 +122,6 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaCodeS3Bucket
         S3Key: !Ref LambdaCodeS3Key
-      Environment:
-        Variables:
-          OTP_SECRET: !Ref OneTimePasswordSecret
 
   # EventBridge Rule
   UserCreationRule:
