@@ -27,6 +27,11 @@ Parameters:
     Default: s3-user@example.com
 
 Resources:
+  # S3 Bucket Creation
+  CloudFormationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: cloud-formation-artifact
 
   # Secrets Manager: One-Time Password
   OneTimePasswordSecret:
@@ -59,13 +64,13 @@ Resources:
   EC2UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub 'lab-1-user-email-${EC2UserName}'
+      Name: !Sub 'cf-user-${EC2UserName}'
       Type: String
       Value: !Ref EC2UserEmail
   S3UserEmailParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub 'lab-1-user-email-${S3UserName}'
+      Name: !Sub 'cf-user-${S3UserName}'
       Type: String
       Value: !Ref S3UserEmail
 
@@ -149,7 +154,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
-                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lab-1-user-email-*'
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cf-user-*'
 
   # Lambda Function
   LogUserInfoLambda:

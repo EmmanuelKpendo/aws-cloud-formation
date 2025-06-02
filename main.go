@@ -43,7 +43,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	//Initialize SSM Client
 	ssmClient := ssm.NewFromConfig(cfg)
-	emailParam := fmt.Sprintf("lab-2-user-email-%s", userName)
+	emailParam := fmt.Sprintf("cf-user-%s", userName)
 
 	//Get Email from Parameter Store
 	emailOutput, err := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
