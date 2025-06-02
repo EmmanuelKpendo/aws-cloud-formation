@@ -106,7 +106,7 @@ Resources:
       Description: Registered email for s3User
 
   # IAM Role for Lambda with read access to Parameters and Secrets
-  LambdaHandlerRole:
+  LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
