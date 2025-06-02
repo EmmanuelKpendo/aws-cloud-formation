@@ -166,17 +166,14 @@ Resources:
 
 Outputs:
   OneTimePasswordSecretArn:
-    Description: ARN of the Secret Manager One-time password secret
+    Description: ARN of the Secrets Manager secret for the one-time password
     Value: !Ref OneTimePasswordSecret
-
-  S3UserGroupName:
-    Description: Name of the S3 Read-only IAM group
-    Value: !Ref S3ReadOnlyGroup
-
   EC2UserGroupName:
-    Description: Name of the EC2 Read-only IAM group
-    Value: !Ref EC2ReadOnlyGroup
-
+    Description: Name of the EC2 read-only group
+    Value: !Ref EC2UserGroup
+  S3UserGroupName:
+    Description: Name of the S3 read-only group
+    Value: !Ref S3UserGroup
   LambdaFunctionArn:
-    Description: Arn of the Lambda function for user creation
+    Description: ARN of the Lambda function
     Value: !GetAtt UserCreationLambda.Arn
